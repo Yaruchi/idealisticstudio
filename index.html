@@ -355,7 +355,7 @@
   #id-card-preview{
     width:100%; max-height:56vh; aspect-ratio:2022/1276;
     border:1px solid var(--line);
-    background: var(--line-soft) url("idealisticID.png") center/cover no-repeat;
+    background: var(--line-soft) url("misc/idealisticID.png") center/cover no-repeat;
     display:block;
   }
   #id-download{
@@ -399,6 +399,8 @@
     <a href="#team">Team</a>
     <a href="#projects">Projects</a>
     <a href="#community">Community</a>
+    <a href="apply.html">Apply</a>
+    <a href="minigames.html">Arcade</a>
   </nav>
 </header>
 
@@ -584,7 +586,7 @@
   };
   let idPhoto = null;
   const idBgImage = new Image();
-  idBgImage.src = 'idealisticID.png';
+  idBgImage.src = 'misc/idealisticID.png';
   idBgImage.onload = () => { drawIdCard(); };
   function stableIdForName(name){
     const value = (name || 'guest').trim().toLowerCase();
@@ -1028,7 +1030,7 @@
   const rewardPreview = document.getElementById('reward-preview');
   const rewardDownload = document.getElementById('reward-download');
   const rewardBadge = new Image();
-  rewardBadge.src = 'idealisticstudiorewardbadge.png';
+  rewardBadge.src = 'misc/idealisticstudiorewardbadge.png';
   gameCounter.lastChild.textContent = '/' + total;
   document.getElementById('game-tag').textContent = 'find ' + total + ' hidden critters';
   function makeRewardPng(){

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idealistic — Apply</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="icon" href="logo.png" type="image/png">
+<link rel="apple-touch-icon" href="logo.png">
+<!-- PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#0a0a0a;
+    --ui-bg:#0a0a0a; --ui-fg:#ffffff;
+    --line:rgba(10,10,10,0.14); --line-soft:rgba(10,10,10,0.07);
+    --muted:rgba(10,10,10,0.55);
+    --display:'Space Grotesk', sans-serif;
+    --body:'Inter', sans-serif;
+    --mono:'JetBrains Mono', monospace;
+    --pixel:'Press Start 2P', var(--mono);
+    --dur:0.6s;
+  }
+  body.night{
+    --bg:#0a0a0a; --fg:#ffffff;
+    --ui-bg:#ffffff; --ui-fg:#0a0a0a;
+    --line:rgba(255,255,255,0.16); --line-soft:rgba(255,255,255,0.08);
+    --muted:rgba(255,255,255,0.55);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  html,body{ background:var(--bg); color:var(--fg); font-family:var(--body);
+    transition:background var(--dur) ease, color var(--dur) ease; overflow-x:hidden; }
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  ::selection{ background:var(--fg); color:var(--bg); }
+
+  #night-canvas{ position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; opacity:.35; transition:opacity 1.2s ease; }
+  body.night #night-canvas{ opacity:1; }
+
+  #topnav{
+    position:fixed; top:0; left:0; right:0; z-index:500;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; background:transparent;
+    transition:background var(--dur) ease, border-color var(--dur) ease, padding var(--dur) ease;
+  }
+  #topnav.scrolled{
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line-soft); padding:12px 32px;
+  }
+  #topnav .brand{ font-family:var(--display); font-weight:700; font-size:15px; letter-spacing:.02em; }
+  #topnav nav{ display:flex; gap:28px; }
+  #topnav nav a{ font-family:var(--mono); font-size:12px; letter-spacing:.03em; opacity:.75; }
+  #topnav nav a:hover{ opacity:1; }
+
+  /* ============ HERO ============ */
+  #hero{
+    min-height:100vh; position:relative; z-index:1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:32px;
+  }
+  #hero .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.08em; margin-bottom:18px; }
+  #hero h1{
+    font-family:var(--display); font-weight:700; letter-spacing:-.02em; line-height:1.02;
+    font-size:clamp(30px, 6.4vw, 78px);
+  }
+  #hero h1 .cycle-wrap{ display:inline-block; position:relative; min-width:1ch; }
+  #hero h1 #role-word{
+    display:inline-block; border-bottom:3px solid var(--fg); padding:0 6px;
+  }
+  #hero .sub{ margin-top:22px; max-width:480px; font-size:15px; line-height:1.6; color:var(--muted); }
+  #hero-cta{
+    margin-top:36px; display:inline-flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:13px; letter-spacing:.04em;
+    background:var(--ui-bg); color:var(--ui-fg); border:none; padding:14px 28px; border-radius:999px;
+  }
+  #scroll-cue{
+    position:absolute; bottom:36px; left:50%; transform:translateX(-50%);
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  #scroll-cue .bar{ width:1px; height:28px; background:var(--fg); animation:cue 1.6s ease-in-out infinite; }
+  @keyframes cue{ 0%,100%{ transform:scaleY(0.3); opacity:.4;} 50%{ transform:scaleY(1); opacity:1;} }
+
+  /* ============ ROLE SLIDES ============ */
+  #roles{ position:relative; z-index:1; padding:60px 32px 120px; }
+  .role-slide{
+    max-width:760px; margin:0 auto; padding:44px 0;
+    border-top:1px solid var(--line-soft);
+  }
+  .role-slide:first-child{ border-top:none; }
+  .role-slide .r-index{ font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.08em; margin-bottom:10px; }
+  .role-slide h3{ font-family:var(--display); font-weight:700; font-size:clamp(24px,3.2vw,32px); margin-bottom:8px; letter-spacing:-.01em; }
+  .role-slide h3 .role-nick{ font-family:var(--mono); font-size:13px; font-weight:500; color:var(--muted); margin-left:8px; vertical-align:middle; }
+  .role-quote{ font-style:italic; font-family:var(--body); font-size:13.5px; color:var(--muted); margin-bottom:14px !important; }
+  .role-slide p{ font-size:14.5px; line-height:1.75; color:var(--muted); margin-bottom:18px; }
+  .role-tags{ display:flex; flex-wrap:wrap; gap:8px; }
+  .role-tags span{ font-family:var(--mono); font-size:11px; border:1px solid var(--line); padding:6px 12px; border-radius:999px; }
+  .roles-more{
+    max-width:760px; margin:60px auto 0; padding-top:48px; border-top:1px solid var(--line-soft);
+    text-align:center; font-family:var(--mono); font-size:13px; color:var(--muted); letter-spacing:.03em;
+  }
+
+  @media(max-width:760px){
+  }
+
+  /* ============ APPLY CTA BAND ============ */
+  #apply-band{
+    position:relative; z-index:1; background:var(--ui-bg); color:var(--ui-fg);
+    padding:100px 32px; text-align:center;
+  }
+  #apply-band h2{ font-family:var(--display); font-weight:700; font-size:clamp(28px,5vw,48px); margin-bottom:16px; }
+  #apply-band p{ max-width:460px; margin:0 auto 32px; font-size:14px; opacity:.75; line-height:1.6; }
+  #apply-open{
+    font-family:var(--mono); font-size:13px; letter-spacing:.04em;
+    background:var(--ui-fg); color:var(--ui-bg); border:none; padding:14px 30px; border-radius:999px;
+  }
+
+  /* ============ APPLICATION MODAL — "MINECRAFT FORM" ============ */
+  #apply-modal{
+    position:fixed; inset:0; z-index:900; display:none;
+    align-items:center; justify-content:center; padding:24px;
+    background:color-mix(in srgb, var(--bg) 75%, transparent);
+    backdrop-filter:blur(6px);
+  }
+  #apply-modal.open{ display:flex; }
+  #apply-modal .mc-panel{
+    width:min(980px, 100%); max-height:88vh; overflow:auto;
+    background:var(--bg); border:4px solid var(--fg);
+    box-shadow: inset 0 0 0 4px var(--bg), inset 0 0 0 8px var(--fg);
+    padding:32px; position:relative;
+  }
+  #apply-modal .m-close{
+    position:absolute; top:16px; right:16px; background:var(--ui-bg); color:var(--ui-fg);
+    border:none; width:32px; height:32px; font-family:var(--pixel); font-size:10px;
+  }
+  #apply-modal h3{
+    font-family:var(--pixel); font-size:16px; line-height:1.6; margin:4px 0 8px;
+    letter-spacing:.02em;
+  }
+  #apply-modal .mc-sub{ font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-bottom:26px; }
+  .mc-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:18px; }
+  .mc-field{ display:grid; gap:6px; }
+  .mc-field.full{ grid-column:1 / -1; }
+  .mc-field label{ font-family:var(--pixel); font-size:9px; letter-spacing:.03em; color:var(--muted); }
+  .mc-field input, .mc-field select, .mc-field textarea{
+    width:100%; border:2px solid var(--fg); background:var(--bg); color:var(--fg);
+    padding:11px 12px; font-family:var(--body); font-size:13.5px; outline:none;
+    box-shadow: inset 2px 2px 0 var(--line-soft);
+  }
+  .mc-field input:focus, .mc-field select:focus, .mc-field textarea:focus{ box-shadow: inset 2px 2px 0 var(--line); }
+  .mc-field textarea{ resize:vertical; min-height:88px; font-family:var(--body); }
+  .mc-actions{ display:flex; flex-wrap:wrap; gap:12px; margin-top:26px; }
+  .mc-btn{
+    font-family:var(--pixel); font-size:10px; letter-spacing:.02em;
+    background:var(--ui-bg); color:var(--ui-fg); border:none; padding:14px 22px;
+  }
+  .mc-btn.secondary{ background:var(--bg); color:var(--fg); border:2px solid var(--fg); }
+  .mc-note{ margin-top:18px; font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.6; }
+
+  /* ============ TOAST ============ */
+  #toast{
+    position:fixed; bottom:28px; left:50%; transform:translate(-50%, 20px);
+    background:var(--ui-bg); color:var(--ui-fg); font-family:var(--mono); font-size:12.5px;
+    padding:13px 22px; border-radius:999px; z-index:950; opacity:0; pointer-events:none;
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  #toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+  @media(max-width:700px){
+    .section{ padding:80px 20px; }
+    #topnav{ padding:14px 18px; }
+    #topnav nav{ gap:16px; }
+    #topnav nav a{ font-size:11px; }
+    .mc-grid{ grid-template-columns:1fr; }
+    #apply-modal .mc-panel{ padding:22px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="night-canvas"></canvas>
+
+<header id="topnav">
+  <a class="brand" href="index.html">IDEALISTIC</a>
+  <nav>
+    <a href="apply.html">Apply</a>
+    <a href="minigames.html">Arcade</a>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<section id="hero">
+  <div class="eyebrow">idealistic studios // now hiring</div>
+  <h1>Apply to become...<br><span class="cycle-wrap"><span id="role-word">Builder</span></span></h1>
+  <p class="sub">We're a small crew turning Minecraft into stories. If you make things — blocks, art, voices, or words — there's a seat for you here.</p>
+  <button id="hero-cta">see open roles ↓</button>
+  <div id="scroll-cue"><span class="bar"></span>scroll</div>
+</section>
+
+<!-- ============ ROLE SLIDES ============ -->
+<section id="roles">
+  <div class="role-slide" data-slug="editor-crew">
+    <div class="role-body">
+      <div class="r-index">ROLE 01 · @Editor Crew</div>
+      <h3>Editor Crew</h3>
+      <p class="role-quote">"Editor for the series"</p>
+      <p>You take raw footage and turn it into something people actually want to watch — cutting, pacing, sound, the works. Every skit lives or dies in the edit.</p>
+      <div class="role-tags"><span>Premiere / DaVinci</span><span>pacing & timing</span><span>sound design</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide flip" data-slug="builder-team">
+    <div class="role-body">
+      <div class="r-index">ROLE 02 · @Builder Team</div>
+      <h3>Builder Team</h3>
+      <p class="role-quote">"The one who builds"</p>
+      <p>You shape the terrain, the towns, and the sets our stories play out on. If you think in blocks and can turn a rough idea into a place people want to explore, this is your seat.</p>
+      <div class="role-tags"><span>terraforming</span><span>interiors</span><span>WorldEdit / litematica</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide" data-slug="filming-crew">
+    <div class="role-body">
+      <div class="r-index">ROLE 03 · @Filming Crew</div>
+      <h3>Filming Crew</h3>
+      <p class="role-quote">"Camera! Roll! Action!"</p>
+      <p>You're behind the in-game camera, setting up shots and following the action so the footage actually looks like a series and not a screen recording.</p>
+      <div class="role-tags"><span>replay mod</span><span>camera work</span><span>blocking</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide flip" data-slug="assistant-filming-crew">
+    <div class="role-body">
+      <div class="r-index">ROLE 04 · @Assistant Filming Crew</div>
+      <h3>Assistant Filming Crew</h3>
+      <p class="role-quote">"The assistant for the director"</p>
+      <p>You back up the director on set — wrangling cast, resetting scenes, keeping shoot days from falling apart. A good assistant makes everyone else's job easier.</p>
+      <div class="role-tags"><span>on-set support</span><span>scheduling</span><span>problem solving</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide" data-slug="marketing-crew">
+    <div class="role-body">
+      <div class="r-index">ROLE 05 · @Marketing Crew</div>
+      <h3>Marketing Crew</h3>
+      <p class="role-quote">"Anything to get relevant"</p>
+      <p>Trailers, posts, captions, the algorithm's mood swings — you're the reason people find out we exist. If you know how to make a scroll stop, we need you.</p>
+      <div class="role-tags"><span>social media</span><span>copywriting</span><span>trend-watching</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide flip" data-slug="writer-team">
+    <div class="role-body">
+      <div class="r-index">ROLE 06 · @Writer Team</div>
+      <h3>Writer Team</h3>
+      <p class="role-quote">"Writer crew"</p>
+      <p>Scripts, lore, and the arcs that hold a series together. You'll work closely with builders and VAs to make sure the world and the words agree with each other.</p>
+      <div class="role-tags"><span>scriptwriting</span><span>worldbuilding</span><span>dialogue</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide" data-slug="staff-writer">
+    <div class="role-body">
+      <div class="r-index">ROLE 07 · @Staff Writer</div>
+      <h3>Staff Writer <span class="role-nick">"The Cooler"</span></h3>
+      <p class="role-quote">"The Cooler — Writer crew"</p>
+      <p>A senior seat on the writer team for whoever's proven they can carry an episode start to finish. Comes with more say in where the story goes.</p>
+      <div class="role-tags"><span>senior writing</span><span>story editing</span><span>mentoring</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide flip" data-slug="voice-actor">
+    <div class="role-body">
+      <div class="r-index">ROLE 08 · @Voice Actor</div>
+      <h3>Voice Actor</h3>
+      <p class="role-quote">"Great ASMR"</p>
+      <p>Every character needs a voice before they feel real. We're looking for range — comedic timing, dramatic weight, and the patience to record a line twelve different ways.</p>
+      <div class="role-tags"><span>VA</span><span>ADR</span><span>home studio</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide" data-slug="artist">
+    <div class="role-body">
+      <div class="r-index">ROLE 09 · @Artist</div>
+      <h3>Artist</h3>
+      <p class="role-quote">"Mmm, delicious art..."</p>
+      <p>Thumbnails, key art, skins, character sheets — you give our world a face. We want a distinct hand, not a generic one, and a willingness to iterate fast on tight deadlines.</p>
+      <div class="role-tags"><span>illustration</span><span>skin design</span><span>thumbnails</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide flip" data-slug="producer">
+    <div class="role-body">
+      <div class="r-index">ROLE 10 · @Producer</div>
+      <h3>Producer</h3>
+      <p class="role-quote">"The one who makes music or BGM for the series"</p>
+      <p>Score, stings, ambience — you set the mood before a single word is spoken. If a scene needs to feel something, that's on you.</p>
+      <div class="role-tags"><span>composition</span><span>BGM / scoring</span><span>mixing</span></div>
+    </div>
+  </div>
+
+  <div class="role-slide" data-slug="idealist">
+    <div class="role-body">
+      <div class="r-index">ROLE 11 · @Idealist</div>
+      <h3>Idealist</h3>
+      <p class="role-quote">"Member role, nothing cool with it"</p>
+      <p>The base member role for anyone who's part of the server — no specific job attached, just here for the community and along for the ride.</p>
+      <div class="role-tags"><span>community</span><span>no pressure</span><span>just vibes</span></div>
+    </div>
+  </div>
+
+  <div class="roles-more">we have more — new roles open up as the studio grows ✧</div>
+</section>
+
+<!-- ============ APPLY CTA BAND ============ -->
+<section id="apply-band">
+  <h2>Ready to join?</h2>
+  <p>Fill out the application below. It only takes a few minutes, and there's no wrong answer for "skillset" — just tell us what you're good at.</p>
+  <button id="apply-open">apply now</button>
+</section>
+
+<!-- ============ APPLICATION MODAL ============ -->
+<div id="apply-modal" aria-hidden="true">
+  <div class="mc-panel">
+    <button class="m-close" id="apply-close" aria-label="Close application">✕</button>
+    <h3>[ IDEALISTIC APPLICATION ]</h3>
+    <div class="mc-sub">fill in your details below, then download your form as a PDF</div>
+
+    <form id="mc-form">
+      <div class="mc-grid">
+        <div class="mc-field">
+          <label>Minecraft username</label>
+          <input id="f-mc-username" type="text" placeholder="Notch">
+        </div>
+        <div class="mc-field">
+          <label>Discord username</label>
+          <input id="f-discord" type="text" placeholder="name#0000">
+        </div>
+        <div class="mc-field">
+          <label>Age</label>
+          <input id="f-age" type="text" placeholder="16">
+        </div>
+        <div class="mc-field">
+          <label>Gender / identity (optional)</label>
+          <select id="f-gender">
+            <option value="">Prefer not to say</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Non-binary</option>
+            <option>Genderfluid</option>
+            <option>Agender</option>
+            <option>Trans Male</option>
+            <option>Trans Female</option>
+            <option>Femboy</option>
+            <option>Tomboy</option>
+            <option>Tomgirl</option>
+            <option>Sigma Male</option>
+            <option>Sigma Female</option>
+            <option value="other">Other (specify)</option>
+          </select>
+          <input id="f-gender-other" type="text" placeholder="type your own" style="display:none; margin-top:8px;">
+        </div>
+        <div class="mc-field">
+          <label>Role applying for</label>
+          <select id="f-role">
+            <option>Editor Crew</option>
+            <option>Builder Team</option>
+            <option>Filming Crew</option>
+            <option>Assistant Filming Crew</option>
+            <option>Marketing Crew</option>
+            <option>Writer Team</option>
+            <option>Staff Writer</option>
+            <option>Voice Actor</option>
+            <option>Artist</option>
+            <option>Producer</option>
+            <option>Idealist</option>
+          </select>
+        </div>
+        <div class="mc-field full">
+          <label>Skillset / experience</label>
+          <textarea id="f-skillset" placeholder="e.g. 3 years building survival-friendly medieval towns, comfortable with WorldEdit..."></textarea>
+        </div>
+        <div class="mc-field full">
+          <label>Portfolio / examples (link)</label>
+          <input id="f-portfolio" type="text" placeholder="https://...">
+        </div>
+        <div class="mc-field full">
+          <label>Why do you want to join Idealistic?</label>
+          <textarea id="f-why" placeholder="Tell us a little about yourself..."></textarea>
+        </div>
+        <div class="mc-field">
+          <label>Availability (hrs / week)</label>
+          <input id="f-availability" type="text" placeholder="5-10">
+        </div>
+        <div class="mc-field">
+          <label>Timezone</label>
+          <input id="f-timezone" type="text" placeholder="GMT+8">
+        </div>
+      </div>
+
+      <div class="mc-actions">
+        <button type="button" class="mc-btn" id="download-pdf">download as pdf</button>
+        <button type="button" class="mc-btn secondary" id="apply-close-2">close</button>
+      </div>
+      <div class="mc-note">The PDF is A4 and has a transparent background for now — a full design is coming soon. Once downloaded, send it to us in #applications on Discord.</div>
+    </form>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  /* ---------- NIGHT DETECTION ---------- */
+  const hour = new Date().getHours();
+  if (hour >= 19 || hour < 6) document.body.classList.add('night');
+
+  /* ---------- TOP NAV SCROLL STATE ---------- */
+  const topnav = document.getElementById('topnav');
+  window.addEventListener('scroll', () => topnav.classList.toggle('scrolled', window.scrollY > 40));
+
+  /* ---------- TOAST ---------- */
+  const toast = document.getElementById('toast');
+  let toastTimer;
+  function showToast(msg){
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  /* ---------- HERO ROLE CYCLE ---------- */
+  const roles = ['an Editor','a Builder','a Filming Crew','an Assistant Filming Crew','a Marketing Crew','a Writer','a Staff Writer','a Voice Actor','an Artist','a Producer','an Idealist'];
+  const roleWord = document.getElementById('role-word');
+  let ri = 0;
+  function cycleRole(){
+    roleWord.style.opacity = 0;
+    setTimeout(() => {
+      ri = (ri + 1) % roles.length;
+      roleWord.textContent = roles[ri];
+      roleWord.style.opacity = 1;
+    }, 260);
+  }
+  roleWord.style.transition = 'opacity .26s ease';
+  setInterval(cycleRole, 2000);
+
+  document.getElementById('hero-cta').addEventListener('click', () => {
+    document.getElementById('roles').scrollIntoView({behavior:'smooth'});
+  });
+
+  /* ---------- APPLY MODAL ---------- */
+  const genderSelect = document.getElementById('f-gender');
+  const genderOther = document.getElementById('f-gender-other');
+  genderSelect.addEventListener('change', () => {
+    genderOther.style.display = genderSelect.value === 'other' ? 'block' : 'none';
+  });
+  const applyModal = document.getElementById('apply-modal');
+  function openApply(){ applyModal.classList.add('open'); applyModal.setAttribute('aria-hidden','false'); }
+  function closeApply(){ applyModal.classList.remove('open'); applyModal.setAttribute('aria-hidden','true'); }
+  document.getElementById('apply-open').addEventListener('click', openApply);
+  document.getElementById('apply-close').addEventListener('click', closeApply);
+  document.getElementById('apply-close-2').addEventListener('click', closeApply);
+  applyModal.addEventListener('click', (e) => { if (e.target === applyModal) closeApply(); });
+
+  /* ---------- PDF GENERATION (A4, transparent background) ---------- */
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight){
+    const words = (text || '').split(/\s+/).filter(Boolean);
+    let line = '';
+    let cy = y;
+    if (!words.length) { ctx.fillText('—', x, cy); return cy + lineHeight; }
+    words.forEach(word => {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, x, cy);
+        line = word;
+        cy += lineHeight;
+      } else {
+        line = test;
+      }
+    });
+    if (line) { ctx.fillText(line, x, cy); cy += lineHeight; }
+    return cy;
+  }
+
+  const documentBgImage = new Image();
+  documentBgImage.src = 'misc/document-background-idealistic.png';
+
+  document.getElementById('download-pdf').addEventListener('click', () => {
+    const data = {
+      mcUsername: document.getElementById('f-mc-username').value.trim(),
+      discord: document.getElementById('f-discord').value.trim(),
+      age: document.getElementById('f-age').value.trim(),
+      gender: genderSelect.value === 'other' ? (genderOther.value.trim() || 'Other') : genderSelect.value,
+      role: document.getElementById('f-role').value,
+      skillset: document.getElementById('f-skillset').value.trim(),
+      portfolio: document.getElementById('f-portfolio').value.trim(),
+      why: document.getElementById('f-why').value.trim(),
+      availability: document.getElementById('f-availability').value.trim(),
+      timezone: document.getElementById('f-timezone').value.trim()
+    };
+
+    if (!data.mcUsername){
+      showToast('add your Minecraft username first ✧');
+      return;
+    }
+
+    // A4 at 150dpi: 1240 x 1754
+    const w = 1240, h = 1754;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+
+    if (documentBgImage.complete && documentBgImage.naturalWidth) {
+      ctx.drawImage(documentBgImage, 0, 0, w, h);
+    }
+
+    ctx.fillStyle = '#0a0a0a';
+    ctx.strokeStyle = '#0a0a0a';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(50, 50, w - 100, h - 100);
+
+    ctx.font = "22px 'Press Start 2P', monospace";
+    ctx.fillText('IDEALISTIC APPLICATION', 90, 140);
+    ctx.font = "12px 'JetBrains Mono', monospace";
+    ctx.fillStyle = '#555';
+    ctx.fillText('generated ' + new Date().toLocaleString(), 90, 168);
+    ctx.fillStyle = '#0a0a0a';
+
+    let y = 240;
+    const lineGap = 34;
+    const fields = [
+      ['MINECRAFT USERNAME', data.mcUsername],
+      ['DISCORD USERNAME', data.discord],
+      ['AGE', data.age],
+      ['GENDER / IDENTITY', data.gender],
+      ['ROLE APPLYING FOR', data.role],
+      ['AVAILABILITY (HRS/WEEK)', data.availability],
+      ['TIMEZONE', data.timezone],
+      ['PORTFOLIO / EXAMPLES', data.portfolio]
+    ];
+    fields.forEach(([label, value]) => {
+      ctx.font = "11px 'Press Start 2P', monospace";
+      ctx.fillStyle = '#777';
+      ctx.fillText(label, 90, y);
+      ctx.font = "20px 'Space Grotesk', sans-serif";
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillText(value || '—', 90, y + 30);
+      y += 78;
+      ctx.strokeStyle = '#dddddd';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(90, y - 46); ctx.lineTo(w - 90, y - 46); ctx.stroke();
+    });
+
+    y += 10;
+    ctx.font = "11px 'Press Start 2P', monospace";
+    ctx.fillStyle = '#777';
+    ctx.fillText('SKILLSET / EXPERIENCE', 90, y);
+    ctx.font = "16px 'Inter', sans-serif";
+    ctx.fillStyle = '#0a0a0a';
+    y = wrapText(ctx, data.skillset, 90, y + 32, w - 180, 26);
+
+    y += 26;
+    ctx.font = "11px 'Press Start 2P', monospace";
+    ctx.fillStyle = '#777';
+    ctx.fillText('WHY DO YOU WANT TO JOIN?', 90, y);
+    ctx.font = "16px 'Inter', sans-serif";
+    ctx.fillStyle = '#0a0a0a';
+    wrapText(ctx, data.why, 90, y + 32, w - 180, 26);
+
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = '#999';
+    ctx.fillText('application form with document background art', 90, h - 80);
+
+    // wait for pixel font to be ready, then export
+    document.fonts.load("22px 'Press Start 2P'").then(() => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+      pdf.save((data.mcUsername || 'application') + '-idealistic-application.pdf');
+      showToast('application downloaded ✧');
+    });
+  });
+
+  /* ---------- NIGHT GRID/DOT CANVAS (matches main site) ---------- */
+  const canvas = document.getElementById('night-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, dots = [];
+  function resize(){
+    const dpr = window.devicePixelRatio || 1;
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = Math.ceil(w * dpr); canvas.height = Math.ceil(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const spacing = 46;
+    dots = [];
+    for (let x = spacing/2; x < w; x += spacing){
+      for (let y = spacing/2; y < h; y += spacing){
+        dots.push({x, y, phase: Math.random()*Math.PI*2});
+      }
+    }
+  }
+  let t = 0;
+  function draw(){
+    const night = document.body.classList.contains('night');
+    ctx.clearRect(0,0,w,h);
+    ctx.strokeStyle = night ? 'rgba(255,255,255,0.05)' : 'rgba(10,10,10,0.045)';
+    const spacing = 46;
+    for (let x = spacing/2; x < w; x += spacing){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for (let y = spacing/2; y < h; y += spacing){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    t += 0.015;
+    dots.forEach(d => {
+      const a = 0.15 + 0.15 * Math.sin(t + d.phase);
+      const rgb = night ? '255,255,255' : '10,10,10';
+      ctx.fillStyle = 'rgba(' + rgb + ',' + a.toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(d.x, d.y, 1.4, 0, Math.PI*2); ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', resize);
+  resize(); draw();
+})();
+</script>
+</body>
+</html>
