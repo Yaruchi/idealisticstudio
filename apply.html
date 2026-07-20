@@ -51,9 +51,14 @@
     backdrop-filter:blur(10px); border-bottom:1px solid var(--line-soft); padding:12px 32px;
   }
   #topnav .brand{ font-family:var(--display); font-weight:700; font-size:15px; letter-spacing:.02em; }
-  #topnav nav{ display:flex; gap:28px; }
-  #topnav nav a{ font-family:var(--mono); font-size:12px; letter-spacing:.03em; opacity:.75; }
-  #topnav nav a:hover{ opacity:1; }
+  #topnav .nav-toggle{ display:none; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:42px; height:42px; border:none; background:transparent; padding:8px; }
+  #topnav .nav-toggle span{ display:block; width:100%; height:2px; background:var(--fg); transition:transform .2s ease, opacity .2s ease; }
+  #topnav .nav-toggle.active span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+  #topnav .nav-toggle.active span:nth-child(2){ opacity:0; }
+  #topnav .nav-toggle.active span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+  #topnav .nav-links{ display:flex; align-items:center; gap:28px; }
+  #topnav .nav-links a{ font-family:var(--mono); font-size:12px; letter-spacing:.03em; opacity:.75; }
+  #topnav .nav-links a:hover{ opacity:1; }
 
   /* ============ HERO ============ */
   #hero{
@@ -172,8 +177,18 @@
   @media(max-width:700px){
     .section{ padding:80px 20px; }
     #topnav{ padding:14px 18px; }
-    #topnav nav{ gap:16px; }
-    #topnav nav a{ font-size:11px; }
+    #topnav .nav-toggle{ display:flex; }
+    #topnav .nav-links{
+      position:absolute; top:calc(100% + 10px); right:18px;
+      flex-direction:column; align-items:flex-start; gap:12px;
+      padding:16px 18px; border:1px solid var(--line);
+      background:color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter:blur(10px); border-radius:16px;
+      opacity:0; pointer-events:none; transform:translateY(-6px);
+      transition:opacity .2s ease, transform .2s ease;
+    }
+    #topnav .nav-links.open{ opacity:1; pointer-events:auto; transform:translateY(0); }
+    #topnav .nav-links a{ font-size:11px; }
     .mc-grid{ grid-template-columns:1fr; }
     #apply-modal .mc-panel{ padding:22px; }
   }
@@ -185,7 +200,10 @@
 
 <header id="topnav">
   <a class="brand" href="index.html">IDEALISTIC</a>
-  <nav>
+  <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-links">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="nav-links" class="nav-links">
     <a href="apply.html">Apply</a>
     <a href="minigames.html">Arcade</a>
   </nav>
@@ -418,8 +436,30 @@
   const hour = new Date().getHours();
   if (hour >= 19 || hour < 6) document.body.classList.add('night');
 
-  /* ---------- TOP NAV SCROLL STATE ---------- */
   const topnav = document.getElementById('topnav');
+  const navToggle = document.getElementById('nav-toggle');
+  const navLinks = document.getElementById('nav-links');
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', () => {
+      const isOpen = navLinks.classList.toggle('open');
+      navToggle.classList.toggle('active', isOpen);
+      navToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        navToggle.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 700) {
+        navLinks.classList.remove('open');
+        navToggle.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
   window.addEventListener('scroll', () => topnav.classList.toggle('scrolled', window.scrollY > 40));
 
   /* ---------- TOAST ---------- */
